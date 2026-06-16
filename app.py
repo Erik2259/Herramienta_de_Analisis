@@ -100,11 +100,16 @@ if uploaded_file is not None:
             st.markdown("---")
             
             # ==========================================
-            # MÓDULO: GRÁFICAS (MAPA DE CALOR)
+            # MÓDULO: GRÁFICAS (MAPA DE CALOR Y DESCRIPCIÓN)
             # ==========================================
             st.header("🎨 Visualización y Gráficas")
             
-            tab1, tab2 = st.tabs(["Mapa de Calor (Correlación)", "Mapa de Calor (Datos Faltantes)"])
+            # Se añade la tercera pestaña para la gráfica de descripción individual
+            tab1, tab2, tab3 = st.tabs([
+                "Mapa de Calor (Correlación)", 
+                "Mapa de Calor (Datos Faltantes)", 
+                "Descripción de Variables"
+            ])
             
             with tab1:
                 st.subheader("Matriz de Correlación")
@@ -119,9 +124,49 @@ if uploaded_file is not None:
             with tab2:
                 st.subheader("Matriz de Valores Faltantes (Nulos)")
                 fig, ax = plt.subplots(figsize=(10, 5))
-                # Si no hay nulos, se mostrará un mapa uniforme continuo
                 sns.heatmap(df.isnull(), cbar=False, cmap="viridis", yticklabels=False, ax=ax)
                 st.pyplot(fig)
+                
+            with tab3:
+                st.subheader("Análisis Gráfico Individual de Variables")
+                all_columns = df.columns.tolist()
+                
+                # Selector para elegir qué columna analizar visualmente
+                columna_seleccionada = st.selectbox("Selecciona una columna para describir:", all_columns)
+                
+                if columna_seleccionada:
+                    # Verificar si la columna es numérica o categórica/objeto
+                    if df[columna_seleccionada].dtype in ['int64', 'float64']:
+                        col_g1, col_g2 = st.columns(2)
+                        
+                        with col_g1:
+                            st.markdown(f"**Distribución (Histograma + KDE) de `{columna_seleccionada}`**")
+                            fig, ax = plt.subplots(figsize=(8, 5))
+                            sns.histplot(data=df, x=columna_seleccionada, kde=True, ax=ax, color="#4A90E2")
+                            ax.set_title(f"Histograma de {columna_seleccionada}")
+                            st.pyplot(fig)
+                            
+                        with col_g2:
+                            st.markdown(f"**Diagrama de Caja (Outliers) de `{columna_seleccionada}`**")
+                            fig, ax = plt.subplots(figsize=(8, 5))
+                            sns.boxplot(data=df, y=columna_seleccionada, ax=ax, color="#50E3C2")
+                            ax.set_title(f"Boxplot de {columna_seleccionada}")
+                            st.pyplot(fig)
+                    else:
+                        st.markdown(f"**Frecuencia de Valores (Top 10) para la Variable Categórica `{columna_seleccionada}`**")
+                        
+                        # Obtener los 10 valores más comunes para evitar saturar el gráfico
+                        top_valores = df[columna_seleccionada].value_counts().head(10)
+                        
+                        if not top_valores.empty:
+                            fig, ax = plt.subplots(figsize=(10, 5))
+                            sns.barplot(x=top_valores.values, y=top_valores.index, ax=ax, palette="Blues_r")
+                            ax.set_title(f"Top 10 valores más frecuentes en {columna_seleccionada}")
+                            ax.set_xlabel("Conteo / Frecuencia")
+                            ax.set_ylabel("Categoría")
+                            st.pyplot(fig)
+                        else:
+                            st.warning("La columna seleccionada no contiene datos suficientes para generar un gráfico de barras.")
                 
         else:
             st.error("❌ El archivo no cumple con las condiciones estructurales:")
