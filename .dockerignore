@@ -1,0 +1,10 @@
+venv/
+venv_test/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.vscode/
+.devcontainer/
+*.md
+.DS_Store
