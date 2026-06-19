@@ -1,31 +1,14 @@
-# Usar una imagen base ligera de Python
-FROM python:3.10-slim
+# Definir la imagen base
+FROM ubuntu:24.04
+#Informacion del contenedor
+LABEL maintainer="Erik"
+LABEL version="0.1"
+LABEL description="contenedor para desarrollo en Python 3.12"
 
-# Evitar que Python escriba archivos .pyc en el disco y asegurar salida en consola limpia
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Establecer el directorio de trabajo
-WORKDIR /app
-
-# Instalar herramientas del sistema necesarias para compilar ciertas librerías si fuera necesario
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copiar e instalar los requerimientos antes del resto del código para aprovechar la caché de Docker
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copiar el código de la aplicación al contenedor
-COPY . .
-
-# Exponer el puerto nativo de Streamlit
-EXPOSE 8501
-
-# Monitoreo de salud del contenedor
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
-
-# Comando para arrancar Streamlit vinculando la dirección IP correcta
-ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+#Instalar paquetes
+RUN apt-get update
+RUN apt-get upgrade -y
+RUN apt-get install python3 -y
+COPY requirements.txt /home/requirements.txt
+RUN pip install -r requirements
+COPY webapp /home/webapp
