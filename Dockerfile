@@ -1,63 +1,45 @@
-# ==========================================
 # Imagen base
-# ==========================================
 FROM ubuntu:24.04
 
-# ==========================================
 # Información del contenedor
-# ==========================================
 LABEL maintainer="Erik"
 LABEL version="0.1"
-LABEL description="Contenedor para la app de Análisis de Datos (Python 3.12 + Streamlit)"
+LABEL description="Contenedor para la app de Análisis de Datos"
 
-# Evita que apt-get pida confirmaciones interactivas durante el build
+# Sin confirmaciones interactivas de apt
 ENV DEBIAN_FRONTEND=noninteractive
-# Evita problemas de backend gráfico de matplotlib dentro del contenedor
+
+# Evita problemas de matplotlib sin pantalla
 ENV MPLBACKEND=Agg
 
-# ==========================================
-# Instalar Python, pip y herramientas de entorno virtual
-# ==========================================
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends \
-        python3 \
-        python3-pip \
-        python3-venv && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Actualizar paquetes
+RUN apt-get update
 
-# ==========================================
+RUN apt-get upgrade -y
+
+# Instalar Python y herramientas
+RUN apt-get install -y python3 python3-pip python3-venv
+
 # Directorio de trabajo
-# ==========================================
 WORKDIR /home
 
-# ==========================================
-# Copiar requirements primero (mejor cacheo de capas de Docker)
-# ==========================================
-COPY requirements.txt /home/requirements.txt
+# Copiar dependencias
+COPY requirements.txt .
 
-# ==========================================
-# Crear el entorno virtual e instalar las dependencias dentro de él
-# ==========================================
-RUN python3 -m venv /home/venv
-RUN /home/venv/bin/pip install --upgrade pip && \
-    /home/venv/bin/pip install --no-cache-dir -r /home/requirements.txt
+# Crear entorno virtual
+RUN python3 -m venv venv
 
-# ==========================================
-# Copiar el código de la aplicación
-# ==========================================
-COPY webapp /home/webapp
+# Actualizar pip dentro del venv
+RUN venv/bin/pip install --upgrade pip
 
-# ==========================================
-# Puerto que expondrá el contenedor
-# ==========================================
+# Instalar dependencias
+RUN venv/bin/pip install -r requirements.txt
+
+# Copiar la aplicación
+COPY webapp ./webapp
+
+# Puerto de la app
 EXPOSE 8080
 
-# ==========================================
-# Comando por defecto: ejecutar la app con Streamlit usando el venv
-# ==========================================
-CMD ["/home/venv/bin/streamlit", "run", "/home/webapp/app.py", \
-     "--server.port=8080", \
-     "--server.address=0.0.0.0", \
-     "--server.headless=true"]
+# Ejecutar la app
+CMD ["venv/bin/streamlit", "run", "webapp/app.py", "--server.port=8080", "--server.address=0.0.0.0", "--server.headless=true"]
